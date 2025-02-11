@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-commerce Microservices Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        #productList, #userList, #orderList {
+            list-style-type: none;
+            padding: 0;
+        }
+        #productList li, #userList li, #orderList li {
+            background-color: #f0f0f0;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>E-commerce Microservices Demo</h1>
+   
+    <div class="section">
+        <h2>Products</h2>
+        <ul id="productList"></ul>
+    </div>
+   
+    <div class="section">
+        <h2>Users</h2>
+        <ul id="userList"></ul>
+    </div>
+   
+    <div class="section">
+        <h2>Create Order</h2>
+        <select id="productSelect"></select>
+        <select id="userSelect"></select>
+        <button onclick="createOrder()">Create Order</button>
+    </div>
+   
+    <div class="section">
+        <h2>Orders</h2>
+        <ul id="orderList"></ul>
+    </div>
+
+    <script>
+        const VM1_IP = 'http://192.168.56.4:5000';
+        const VM2_IP = 'http://192.168.56.3:5000';
+        const VM3_IP = 'http://192.168.56.6:5000';
+
+        async function fetchProducts() {
+            const response = await fetch(`${VM1_IP}/products`);
+            const products = await response.json();
+            const productList = document.getElementById('productList');
+            const productSelect = document.getElementById('productSelect');
+           
+            productList.innerHTML = '';
+            productSelect.innerHTML = '';
+           
+            products.forEach(product => {
+                productList.innerHTML += `<li>ID: ${product.id}, Name: ${product.name}, Price: $${product.price}</li>`;
+                productSelect.innerHTML += `<option value="${product.id}">${product.name}</option>`;
+            });
+        }
+
+        async function fetchUsers() {
+            const response = await fetch(`${VM3_IP}/users`);
+            const users = await response.json();
+            const userList = document.getElementById('userList');
+            const userSelect = document.getElementById('userSelect');
+           
+            userList.innerHTML = '';
+            userSelect.innerHTML = '';
+           
+            users.forEach(user => {
+                userList.innerHTML += `<li>ID: ${user.id}, Name: ${user.name}, Email: ${user.email}</li>`;
+                userSelect.innerHTML += `<option value="${user.id}">${user.name}</option>`;
+            });
+        }
+
+        async function createOrder() {
+            const productId = document.getElementById('productSelect').value;
+            const userId = document.getElementById('userSelect').value;
+           
+            const response = await fetch(`${VM2_IP}/orders`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ product_id: parseInt(productId), user_id: parseInt(userId) }),
+            });
+           
+            if (response.ok) {
+                alert('Order created successfully!');
+                fetchOrders();
+            } else {
+                alert('Failed to create order.');
+            }
+        }
+
+        async function fetchOrders() {
+            const response = await fetch(`${VM2_IP}/orders`);
+            const orders = await response.json();
+            const orderList = document.getElementById('orderList');
+           
+            orderList.innerHTML = '';
+           
+            orders.forEach(order => {
+                orderList.innerHTML += `<li>Order ID: ${order.id}, Product ID: ${order.product_id}, User ID: ${order.user_id}</li>`;
+            });
+        }
+
+        // Initial data fetch
+        fetchProducts();
+        fetchUsers();
+        fetchOrders();
+    </script>
+</body>
+</html>
